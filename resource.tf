@@ -74,7 +74,7 @@ resource "digitalocean_droplet" "bgg_droplet" {
   connection {
     host        = self.ipv4_address
     user        = "root"
-    private_key = file("~/.ssh/fred_rsa")
+    private_key = file("~/.ssh/fred_ed25519")
   }
   provisioner "file" {
     source      = "workshop01_nginx_assets.zip" 
