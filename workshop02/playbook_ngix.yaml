@@ -1,0 +1,28 @@
+- name: Install nginx server
+  hosts: all
+
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+    - name: Create code-server conf
+      template:
+        src: code-server.conf.j2
+        dest: /etc/nginx/sites-available/code-server.conf
+        mode: '0644'
+    - name: Create symbolic link code-server.conf
+      file:
+        src: /etc/nginx/sites-available/code-server.conf
+        dest: /etc/nginx/sites-enabled/code-server.conf
+        state: link
+    - name: Test nginx configuration
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+    - name: Reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+        enabled: yes
