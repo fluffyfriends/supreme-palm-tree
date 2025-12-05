@@ -1,0 +1,52 @@
+---
+- name: Configure code-server and nginx
+  hosts: all
+
+  tasks:
+    - name: Update code-server service with password
+      ansible.builtin.replace:
+        path: /lib/systemd/system/code-server.service
+        regexp: 'Environment=PASSWORD=__PLACEHOLDER__'
+        replace: 'Environment=PASSWORD="{{ codeserver_password }}"'
+
+    - name: Update nginx configuration with domain
+      ansible.builtin.replace:
+        path: /etc/nginx/sites-available/code-server.conf
+        regexp: 'server_name code-server.your-domain;'
+        replace: 'server_name {{ server_domain }};'
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Restart code-server service
+      ansible.builtin.systemd:
+        name: code-server
+        state: restarted
+        enabled: yes
+
+    - name: Restart nginx service
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    - name: Wait for code-server to be ready
+      ansible.builtin.wait_for:
+        port: 8080
+        host: 127.0.0.1
+        delay: 2
+        timeout: 30
+
+    - name: Verify code-server is running
+      ansible.builtin.systemd:
+        name: code-server
+      register: codeserver_status
+
+    - name: Display code-server status
+      ansible.builtin.debug:
+        msg: "Code-server is {{ codeserver_status.status.ActiveState }}"
+
+    - name: Display access URL
+      ansible.builtin.debug:
+        msg: "Access code-server at: http://{{ server_domain }}"
